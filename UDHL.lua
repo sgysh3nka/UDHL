@@ -8,12 +8,14 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local GuiService = game:GetService("GuiService")
 
+-- Settings configuration
 local SETTINGS = {
     Keys = {
         Lock = "q",
         Switch = "e",
         AimMode = "r",
-        Menu = "t"
+        Menu = "t",
+        HideUI = "l"
     },
     FOV = 60,
     MaxDistance = 1000,
@@ -25,9 +27,11 @@ local SETTINGS = {
     AutoFire = false,
     TeamCheck = false,
     WallCheck = false,
-    TriggerBot = false
+    TriggerBot = false,
+    UIVisible = true
 }
 
+-- State management
 local STATE = {
     Active = false,
     Target = nil,
@@ -37,9 +41,70 @@ local STATE = {
     Highlight = nil,
     FOVCircle = nil,
     Sound = nil,
-    NotificationGui = nil
+    NotificationGui = nil,
+    Watermark = nil
 }
 
+-- Create properly scaled watermark
+local function createWatermark()
+    if STATE.Watermark then STATE.Watermark:Destroy() end
+    
+    local watermark = Instance.new("ScreenGui")
+    watermark.Name = "UDHL_Watermark"
+    watermark.ResetOnSpawn = false
+    watermark.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    watermark.IgnoreGuiInset = true
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 0, 0, 0) -- Auto-size
+    frame.Position = UDim2.new(1, -10, 0, 10) -- Top right with padding
+    frame.AnchorPoint = Vector2.new(1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 0, 0, 0) -- Auto-size
+    label.Text = "UDHL v1.1.0 | discord.gg/sFRbAWrCCb"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Right
+    
+    -- Auto-size the frame to fit text
+    local textPadding = 10
+    local textBounds = TextService:GetTextSize(label.Text, label.TextSize, label.Font, Vector2.new(10000, 10000))
+    frame.Size = UDim2.new(0, textBounds.X + textPadding * 2, 0, textBounds.Y + textPadding)
+    label.Size = UDim2.new(1, -textPadding, 1, 0)
+    label.Position = UDim2.new(0, textPadding, 0, 0)
+    
+    corner.Parent = frame
+    label.Parent = frame
+    frame.Parent = watermark
+    watermark.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    STATE.Watermark = watermark
+end
+
+-- Toggle UI visibility
+local function toggleUI()
+    SETTINGS.UIVisible = not SETTINGS.UIVisible
+    
+    if STATE.Watermark then
+        STATE.Watermark.Enabled = SETTINGS.UIVisible
+    end
+    if STATE.FOVCircle then
+        STATE.FOVCircle.Enabled = SETTINGS.UIVisible and SETTINGS.ShowFOV
+    end
+    
+    showNotification("UI "..(SETTINGS.UIVisible and "shown" or "hidden"), 142376130)
+end
+
+-- Create sound instance
 local function createSound()
     if not STATE.Sound then
         STATE.Sound = Instance.new("Sound")
@@ -50,6 +115,7 @@ local function createSound()
     return STATE.Sound
 end
 
+-- Play sound effect
 local function playSound(id)
     if not SETTINGS.Sounds then return end
     local sound = createSound()
@@ -57,8 +123,9 @@ local function playSound(id)
     sound:Play()
 end
 
+-- Show notification on screen
 local function showNotification(message, soundId)
-    if not SETTINGS.Notifications then return end
+    if not SETTINGS.Notifications or not SETTINGS.UIVisible then return end
     
     if STATE.NotificationGui then
         STATE.NotificationGui:Destroy()
@@ -113,6 +180,7 @@ local function showNotification(message, soundId)
     end)
 end
 
+-- Create FOV circle visualization
 local function createFOVCircle()
     if STATE.FOVCircle then STATE.FOVCircle:Destroy() end
     
@@ -121,6 +189,7 @@ local function createFOVCircle()
     circle.ResetOnSpawn = false
     circle.IgnoreGuiInset = true
     circle.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    circle.Enabled = SETTINGS.UIVisible and SETTINGS.ShowFOV
     
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 1, 0)
@@ -141,6 +210,7 @@ local function createFOVCircle()
     STATE.FOVCircle = circle
 end
 
+-- Check if target is visible (wall check)
 local function isVisible(position)
     if not SETTINGS.WallCheck then return true end
     
@@ -154,6 +224,7 @@ local function isVisible(position)
     return not result or result.Instance:IsDescendantOf(STATE.Target.Character)
 end
 
+-- Team check function
 local function isEnemy(player)
     if not SETTINGS.TeamCheck then return true end
     
@@ -164,6 +235,7 @@ local function isEnemy(player)
     return true
 end
 
+-- Get target body part based on aim mode
 local function getTargetPart(character)
     local partName = STATE.AimMode == "Head" and "Head" or "HumanoidRootPart"
     local part = character:FindFirstChild(partName) or character:FindFirstChild("UpperTorso")
@@ -180,6 +252,7 @@ local function getTargetPart(character)
     return nil, Vector3.new()
 end
 
+-- Find the best target within FOV
 local function findBestTarget()
     local closestPlayer = nil
     local shortestDistance = SETTINGS.MaxDistance
@@ -212,9 +285,25 @@ local function findBestTarget()
     return closestPlayer
 end
 
+-- Smooth aim function with camera rotation
 local function smoothAim(targetPos)
     if not LocalPlayer.Character then return end
     
+    -- First rotate the camera towards the target
+    local cameraCFrame = Camera.CFrame
+    local cameraLook = cameraCFrame.LookVector
+    local targetDirection = (targetPos - cameraCFrame.Position).Unit
+    
+    -- Calculate rotation needed
+    local rotation = CFrame.fromAxisAngle(
+        cameraLook:Cross(targetDirection),
+        math.acos(math.clamp(cameraLook:Dot(targetDirection), -1, 1))
+    )
+    
+    -- Apply smooth rotation to camera
+    Camera.CFrame = cameraCFrame:Lerp(cameraCFrame * rotation, SETTINGS.Smoothness)
+    
+    -- Then rotate character body
     local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     
@@ -227,6 +316,7 @@ local function smoothAim(targetPos)
     root.CFrame = currentCF:Lerp(targetCF, SETTINGS.Smoothness)
 end
 
+-- Highlight the target character
 local function highlightTarget(character)
     if STATE.Highlight then 
         STATE.Highlight:Destroy()
@@ -246,6 +336,7 @@ local function highlightTarget(character)
     STATE.Highlight = highlight
 end
 
+-- Triggerbot functionality
 local function checkTriggerbot()
     if not SETTINGS.TriggerBot or not STATE.Active or not STATE.Target then return end
     
@@ -257,6 +348,7 @@ local function checkTriggerbot()
     end
 end
 
+-- Main lock update function
 local function updateLock()
     if not STATE.Active then 
         highlightTarget(nil)
@@ -287,8 +379,9 @@ local function updateLock()
     checkTriggerbot()
 end
 
+-- Create settings menu GUI with Discord info
 local function createSettingsMenu()
-    if STATE.MenuOpen then return end
+    if STATE.MenuOpen or not SETTINGS.UIVisible then return end
     
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "LockSettingsMenu"
@@ -296,8 +389,8 @@ local function createSettingsMenu()
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.25, 0, 0.45, 0)
-    frame.Position = UDim2.new(0.75, 0, 0.3, 0)
+    frame.Size = UDim2.new(0.25, 0, 0.5, 0) -- Increased height for Discord info
+    frame.Position = UDim2.new(0.75, 0, 0.25, 0)
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     frame.BackgroundTransparency = 0.3
     frame.BorderSizePixel = 0
@@ -307,7 +400,7 @@ local function createSettingsMenu()
     
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0.1, 0)
-    title.Text = "LOCK SETTINGS"
+    title.Text = "LOCK SETTINGS | discord.gg/sFRbAWrCCb"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.BackgroundTransparency = 1
     title.Font = Enum.Font.GothamBold
@@ -404,17 +497,30 @@ local function createSettingsMenu()
         createSetting(setting[1], setting[2], setting[3], setting[4], setting[5])
     end
     
+    -- Add Discord info at the bottom
+    local discordInfo = Instance.new("TextLabel")
+    discordInfo.Size = UDim2.new(1, -20, 0.1, 0)
+    discordInfo.Position = UDim2.new(0, 10, 0.9, 0)
+    discordInfo.Text = "Join our Discord: discord.gg/sFRbAWrCCb"
+    discordInfo.TextColor3 = Color3.fromRGB(100, 150, 255)
+    discordInfo.BackgroundTransparency = 1
+    discordInfo.Font = Enum.Font.GothamBold
+    discordInfo.TextSize = 14
+    discordInfo.TextXAlignment = Enum.TextXAlignment.Center
+    
     corner.Parent = frame
     title.Parent = frame
     closeButton.Parent = frame
+    discordInfo.Parent = frame
     frame.Parent = screenGui
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     
     STATE.MenuOpen = true
 end
 
+-- Handle keyboard input
 local function handleInput(input, processed)
-    if processed or not UserInputService:GetFocusedTextBox() == nil then return end
+    if processed or UserInputService:GetFocusedTextBox() then return end
     
     local key = input.KeyCode.Name:lower()
     
@@ -443,10 +549,18 @@ local function handleInput(input, processed)
         showNotification("Aim mode: "..STATE.AimMode, 142376130)
     elseif key == SETTINGS.Keys.Menu then
         createSettingsMenu()
+    elseif key == SETTINGS.Keys.HideUI then
+        toggleUI()
     end
 end
 
+-- Initialize the script
 local function initialize()
+    -- Add TextService for text measurements
+    local TextService = game:GetService("TextService")
+    
+    createWatermark()
+    
     if SETTINGS.ShowFOV then
         createFOVCircle()
     end
@@ -454,10 +568,12 @@ local function initialize()
     table.insert(STATE.Connections, UserInputService.InputBegan:Connect(handleInput))
     table.insert(STATE.Connections, RunService.Heartbeat:Connect(updateLock))
     
-    showNotification("Ultimate Lock Script loaded!", 142376130)
+    showNotification("Ultimate Lock Script loaded! (UDHL v1.1.0)", 142376130)
     showNotification("Press ["..SETTINGS.Keys.Menu:upper().."] for settings", 9046895032)
+    showNotification("Press ["..SETTINGS.Keys.HideUI:upper().."] to hide UI", 9046895032)
 end
 
+-- Cleanup function
 local function cleanup()
     for _, conn in ipairs(STATE.Connections) do
         conn:Disconnect()
@@ -467,24 +583,28 @@ local function cleanup()
     if STATE.FOVCircle then STATE.FOVCircle:Destroy() end
     if STATE.Sound then STATE.Sound:Destroy() end
     if STATE.NotificationGui then STATE.NotificationGui:Destroy() end
+    if STATE.Watermark then STATE.Watermark:Destroy() end
     
     STATE.Connections = {}
     STATE.Active = false
 end
 
+-- Error handling
 local success, err = pcall(initialize)
 if not success then
     warn("Lock script error: "..tostring(err))
     cleanup()
 end
 
+-- Cleanup when character is removed or teleporting
 LocalPlayer.CharacterRemoving:Connect(cleanup)
 LocalPlayer.OnTeleport:Connect(function(state)
-    if state == Enum.TeleportState.Started then
-        cleanup()
-    end
+        if state == Enum.TeleportState.Started then
+            cleanup()
+        end
 end)
 
+-- Anti-AFK system
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local function antiAFK()
     VirtualInputManager:SendKeyEvent(true, "LeftControl", false, nil)
