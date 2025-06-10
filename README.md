@@ -1,6 +1,10 @@
-# 💃 Ultimate Da Hood Lock
+# 💃 UDHL 1.1.0 is here!
 
 The best lock for Da Hood you've ever seen!
+
+# 💖 Discord
+
+https://discord.gg/sFRbAWrCCb
 
 # ⭐ Features
 
