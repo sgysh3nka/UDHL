@@ -6,16 +6,6 @@ The best lock for Da Hood you've ever seen!
 
 https://discord.gg/sFRbAWrCCb
 
-# ⭐ Features
-
-- Smart target locking
-- Visual FOV circle
-- Prediction system
-- Sound notifications
-- Settings menu
-- Team/Wall check
-- Anti AFK
-
 # 🧟‍♂️ How to inject?
 
 ```lua
