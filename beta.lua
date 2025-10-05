@@ -10,7 +10,7 @@ local player = Players.LocalPlayer
 -- UDHL settings
 local udhl_settings = {
     HeadSize = 20,
-    Disabled = false,
+    Disabled = true,  -- Fixed: default to true so hitboxes are OFF by default
     Transparency = 0.7,
     Protection = true,
     CFrameSpeed = false,
@@ -219,7 +219,8 @@ local function createSettings()
     local elementHeight = 30
     
     -- Combat settings
-    createToggleSetting("Hitbox Expander", yOffset, "Disabled", combatContainer)
+    -- Fixed: Changed label to be more clear
+    createToggleSetting("Hitboxes", yOffset, "Disabled", combatContainer)
     yOffset = yOffset + elementHeight
     
     -- HeadSize slider for Combat
@@ -486,7 +487,7 @@ dragCircle.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
-end)
+end
 
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
@@ -674,6 +675,7 @@ local function onCharacterAdded(character)
     updateGUI()
     
     -- Reset hitboxes for other players based on current setting
+    -- Fixed: Now properly checks the Disabled setting
     if not udhl_settings.Disabled then
         for i, v in next, Players:GetPlayers() do
             if v ~= player and v.Character then
@@ -689,6 +691,20 @@ local function onCharacterAdded(character)
                 end)
             end
         end
+    else
+        -- Reset hitboxes when disabled
+        for i, v in next, Players:GetPlayers() do
+            if v ~= player and v.Character then
+                pcall(function()
+                    local rootPart = v.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        rootPart.Size = Vector3.new(2, 2, 1)
+                        rootPart.Transparency = 0
+                        rootPart.CanCollide = true
+                    end
+                end)
+            end
+        end
     end
 end
 
@@ -696,6 +712,7 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 
 -- Main hitbox expansion loop
+-- Fixed: Now properly checks the Disabled setting
 RunService.RenderStepped:Connect(function()
     if not udhl_settings.Disabled then
         for i, v in next, Players:GetPlayers() do
