@@ -4,13 +4,14 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local TextService = game:GetService("TextService")
+local SoundService = game:GetService("SoundService")
 
 local player = Players.LocalPlayer
 
 -- UDHL settings
 local udhl_settings = {
     HeadSize = 20,
-    Disabled = true,  -- Fixed: default to true so hitboxes are OFF by default
+    Disabled = true,
     Transparency = 0.7,
     Protection = true,
     CFrameSpeed = false,
@@ -18,6 +19,16 @@ local udhl_settings = {
     Noclip = false,
     NoSlow = false,
     NoJumpCooldown = false
+}
+
+-- Sound IDs to block from being played in Da Hood
+local blockedSoundIds = {
+    "330595293",    -- Blood Splatter Hit
+    "287062939",    -- Hitmarker Sound Effect
+    "541909913",    -- Heavy Hard Punch Hit
+    "8595980577",   -- hit_punch_l
+    "120763034620275", -- pulling(2)
+    "1386772138"    -- Stab
 }
 
 -- Store GUI elements for updates
@@ -219,7 +230,6 @@ local function createSettings()
     local elementHeight = 30
     
     -- Combat settings
-    -- Fixed: Changed label to be more clear
     createToggleSetting("Hitboxes", yOffset, "Disabled", combatContainer)
     yOffset = yOffset + elementHeight
     
@@ -481,7 +491,7 @@ dragCircle.InputBegan:Connect(function(input)
             end
         end)
     end
-end)
+end
 
 dragCircle.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
@@ -538,13 +548,64 @@ toggleCircle.MouseButton1Click:Connect(function()
         task.wait(0.2) -- Debounce time
         debounce = false
     end
-end)
+end
 
 -- Set initial toggle button text
 toggleCircle.Text = guiVisible and "▲" or "▼"
 
 -- Create all settings
 createSettings()
+
+-- Sound blocking system for Da Hood
+local function setupSoundBlocking()
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        pcall(function()
+            -- Block sounds from being played globally
+            for _, sound in pairs(workspace:GetDescendants()) do
+                if sound:IsA("Sound") then
+                    for _, blockedId in ipairs(blockedSoundIds) do
+                        if string.find(sound.SoundId, blockedId) then
+                            sound:Stop()
+                            sound.Volume = 0
+                            sound.Playing = false
+                        end
+                    end
+                end
+            end
+            
+            -- Also check SoundService
+            for _, sound in pairs(SoundService:GetDescendants()) do
+                if sound:IsA("Sound") then
+                    for _, blockedId in ipairs(blockedSoundIds) do
+                        if string.find(sound.SoundId, blockedId) then
+                            sound:Stop()
+                            sound.Volume = 0
+                            sound.Playing = false
+                        end
+                    end
+                end
+            end
+            
+            -- Check player's character
+            if player.Character then
+                for _, sound in pairs(player.Character:GetDescendants()) do
+                    if sound:IsA("Sound") then
+                        for _, blockedId in ipairs(blockedSoundIds) do
+                            if string.find(sound.SoundId, blockedId) then
+                                sound:Stop()
+                                sound.Volume = 0
+                                sound.Playing = false
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end)
+    
+    return connection
+end
 
 -- CFrame Speed function (fast movement through CFrame manipulation)
 local function setupCFrameSpeed()
@@ -665,6 +726,7 @@ local cframeSpeedConnection = setupCFrameSpeed()
 local noclipConnection = setupNoclip()
 local noslowConnection = setupNoSlow()
 local nojumpConnection = setupNoJumpCooldown()
+local soundBlockingConnection = setupSoundBlocking()
 
 -- Character respawn handler
 local function onCharacterAdded(character)
@@ -675,7 +737,6 @@ local function onCharacterAdded(character)
     updateGUI()
     
     -- Reset hitboxes for other players based on current setting
-    -- Fixed: Now properly checks the Disabled setting
     if not udhl_settings.Disabled then
         for i, v in next, Players:GetPlayers() do
             if v ~= player and v.Character then
@@ -712,7 +773,6 @@ end
 player.CharacterAdded:Connect(onCharacterAdded)
 
 -- Main hitbox expansion loop
--- Fixed: Now properly checks the Disabled setting
 RunService.RenderStepped:Connect(function()
     if not udhl_settings.Disabled then
         for i, v in next, Players:GetPlayers() do
