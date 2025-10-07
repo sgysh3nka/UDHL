@@ -1,0 +1,661 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+
+-- UDHL settings
+local udhl_settings = {
+    -- Combat
+    HeadSize = 20,
+    Disabled = false,
+    Transparency = 0.7,
+    Protection = true,
+    
+    -- Movement
+    CFrameSpeed = false,
+    SpeedValue = 50,
+    
+    -- Visuals
+    NametagsESP = false,
+    SkeletonESP = false,
+    BoxESP = false
+}
+
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "UDHL_GUI"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 320)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+title.BorderSizePixel = 0
+title.Text = "UDHL 1.1.2"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = title
+
+-- Category buttons
+local categoriesFrame = Instance.new("Frame")
+categoriesFrame.Size = UDim2.new(1, -20, 0, 25)
+categoriesFrame.Position = UDim2.new(0, 10, 0, 35)
+categoriesFrame.BackgroundTransparency = 1
+categoriesFrame.Parent = mainFrame
+
+local categories = {"Combat", "Movement", "Visuals", "Info"}
+local categoryButtons = {}
+local currentCategory = "Combat"
+
+for i, category in pairs(categories) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.23, 0, 1, 0)
+    btn.Position = UDim2.new(0.23 * (i-1), 0, 0, 0)
+    btn.BackgroundColor3 = category == currentCategory and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+    btn.Text = category
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    btn.Font = Enum.Font.Gotham
+    btn.Parent = categoriesFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = btn
+    
+    categoryButtons[category] = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        currentCategory = category
+        for cat, button in pairs(categoryButtons) do
+            button.BackgroundColor3 = cat == category and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+        end
+        updateCategoryDisplay()
+    end)
+end
+
+-- Content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -20, 1, -70)
+contentFrame.Position = UDim2.new(0, 10, 0, 65)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+-- Category content functions
+local categoryContents = {}
+
+-- Combat category
+categoryContents.Combat = function(parent)
+    local combatFrame = Instance.new("Frame")
+    combatFrame.Size = UDim2.new(1, 0, 1, 0)
+    combatFrame.BackgroundTransparency = 1
+    combatFrame.Parent = parent
+    
+    -- HeadSize slider
+    local sizeFrame = Instance.new("Frame")
+    sizeFrame.Size = UDim2.new(1, 0, 0, 30)
+    sizeFrame.BackgroundTransparency = 1
+    sizeFrame.Parent = combatFrame
+
+    local sizeLabel = Instance.new("TextLabel")
+    sizeLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    sizeLabel.BackgroundTransparency = 1
+    sizeLabel.Text = "Head Size: " .. udhl_settings.HeadSize
+    sizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sizeLabel.Parent = sizeFrame
+
+    local sizeBox = Instance.new("TextBox")
+    sizeBox.Size = UDim2.new(0.35, 0, 0.7, 0)
+    sizeBox.Position = UDim2.new(0.65, 0, 0.15, 0)
+    sizeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    sizeBox.Text = tostring(udhl_settings.HeadSize)
+    sizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sizeBox.PlaceholderText = "Size"
+    sizeBox.Parent = sizeFrame
+
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.Parent = sizeBox
+
+    -- Transparency slider
+    local transFrame = Instance.new("Frame")
+    transFrame.Size = UDim2.new(1, 0, 0, 30)
+    transFrame.Position = UDim2.new(0, 0, 0, 35)
+    transFrame.BackgroundTransparency = 1
+    transFrame.Parent = combatFrame
+
+    local transLabel = Instance.new("TextLabel")
+    transLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    transLabel.BackgroundTransparency = 1
+    transLabel.Text = "Transparency: " .. udhl_settings.Transparency
+    transLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    transLabel.TextXAlignment = Enum.TextXAlignment.Left
+    transLabel.Parent = transFrame
+
+    local transBox = Instance.new("TextBox")
+    transBox.Size = UDim2.new(0.35, 0, 0.7, 0)
+    transBox.Position = UDim2.new(0.65, 0, 0.15, 0)
+    transBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    transBox.Text = tostring(udhl_settings.Transparency)
+    transBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    transBox.PlaceholderText = "0-1"
+    transBox.Parent = transFrame
+
+    local transCorner = Instance.new("UICorner")
+    transCorner.CornerRadius = UDim.new(0, 4)
+    transCorner.Parent = transBox
+
+    -- Toggle buttons
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Size = UDim2.new(1, 0, 0, 80)
+    toggleFrame.Position = UDim2.new(0, 0, 0, 70)
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Parent = combatFrame
+
+    -- Enable/Disable button
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, 0, 0, 30)
+    toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(50, 255, 50)
+    toggleBtn.Text = udhl_settings.Disabled and "HITBOX: DISABLED" or "HITBOX: ENABLED"
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.Parent = toggleFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = toggleBtn
+
+    -- Protection button
+    local protectBtn = Instance.new("TextButton")
+    protectBtn.Size = UDim2.new(1, 0, 0, 30)
+    protectBtn.Position = UDim2.new(0, 0, 0, 40)
+    protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 150, 255) or Color3.fromRGB(100, 100, 100)
+    protectBtn.Text = udhl_settings.Protection and "PROTECTION: ON" or "PROTECTION: OFF"
+    protectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    protectBtn.Font = Enum.Font.GothamBold
+    protectBtn.Parent = toggleFrame
+
+    local protectCorner = Instance.new("UICorner")
+    protectCorner.CornerRadius = UDim.new(0, 4)
+    protectCorner.Parent = protectBtn
+
+    -- Connections
+    sizeBox.FocusLost:Connect(function()
+        local newSize = tonumber(sizeBox.Text)
+        if newSize and newSize > 0 and newSize <= 100 then
+            udhl_settings.HeadSize = newSize
+            sizeLabel.Text = "Head Size: " .. udhl_settings.HeadSize
+        else
+            sizeBox.Text = tostring(udhl_settings.HeadSize)
+        end
+    end)
+
+    transBox.FocusLost:Connect(function()
+        local newTrans = tonumber(transBox.Text)
+        if newTrans and newTrans >= 0 and newTrans <= 1 then
+            udhl_settings.Transparency = newTrans
+            transLabel.Text = "Transparency: " .. udhl_settings.Transparency
+        else
+            transBox.Text = tostring(udhl_settings.Transparency)
+        end
+    end)
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        udhl_settings.Disabled = not udhl_settings.Disabled
+        toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(50, 255, 50)
+        toggleBtn.Text = udhl_settings.Disabled and "HITBOX: DISABLED" or "HITBOX: ENABLED"
+    end)
+
+    protectBtn.MouseButton1Click:Connect(function()
+        udhl_settings.Protection = not udhl_settings.Protection
+        protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 150, 255) or Color3.fromRGB(100, 100, 100)
+        protectBtn.Text = udhl_settings.Protection and "PROTECTION: ON" or "PROTECTION: OFF"
+    end)
+    
+    return combatFrame
+end
+
+-- Movement category
+categoryContents.Movement = function(parent)
+    local movementFrame = Instance.new("Frame")
+    movementFrame.Size = UDim2.new(1, 0, 1, 0)
+    movementFrame.BackgroundTransparency = 1
+    movementFrame.Parent = parent
+    
+    -- Speed value
+    local speedFrame = Instance.new("Frame")
+    speedFrame.Size = UDim2.new(1, 0, 0, 30)
+    speedFrame.BackgroundTransparency = 1
+    speedFrame.Parent = movementFrame
+
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Text = "Speed Value: " .. udhl_settings.SpeedValue
+    speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.Parent = speedFrame
+
+    local speedBox = Instance.new("TextBox")
+    speedBox.Size = UDim2.new(0.35, 0, 0.7, 0)
+    speedBox.Position = UDim2.new(0.65, 0, 0.15, 0)
+    speedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    speedBox.Text = tostring(udhl_settings.SpeedValue)
+    speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedBox.PlaceholderText = "Speed"
+    speedBox.Parent = speedFrame
+
+    local speedCorner = Instance.new("UICorner")
+    speedCorner.CornerRadius = UDim.new(0, 4)
+    speedCorner.Parent = speedBox
+
+    -- CFrame Speed toggle
+    local speedToggleFrame = Instance.new("Frame")
+    speedToggleFrame.Size = UDim2.new(1, 0, 0, 40)
+    speedToggleFrame.Position = UDim2.new(0, 0, 0, 40)
+    speedToggleFrame.BackgroundTransparency = 1
+    speedToggleFrame.Parent = movementFrame
+
+    local speedBtn = Instance.new("TextButton")
+    speedBtn.Size = UDim2.new(1, 0, 0, 30)
+    speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
+    speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedBtn.Font = Enum.Font.GothamBold
+    speedBtn.Parent = speedToggleFrame
+
+    local speedBtnCorner = Instance.new("UICorner")
+    speedBtnCorner.CornerRadius = UDim.new(0, 4)
+    speedBtnCorner.Parent = speedBtn
+
+    -- Connections
+    speedBox.FocusLost:Connect(function()
+        local newSpeed = tonumber(speedBox.Text)
+        if newSpeed and newSpeed > 0 and newSpeed <= 500 then
+            udhl_settings.SpeedValue = newSpeed
+            speedLabel.Text = "Speed Value: " .. udhl_settings.SpeedValue
+        else
+            speedBox.Text = tostring(udhl_settings.SpeedValue)
+        end
+    end)
+
+    speedBtn.MouseButton1Click:Connect(function()
+        udhl_settings.CFrameSpeed = not udhl_settings.CFrameSpeed
+        speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
+    end)
+    
+    return movementFrame
+end
+
+-- Visuals category
+categoryContents.Visuals = function(parent)
+    local visualsFrame = Instance.new("Frame")
+    visualsFrame.Size = UDim2.new(1, 0, 1, 0)
+    visualsFrame.BackgroundTransparency = 1
+    visualsFrame.Parent = parent
+    
+    -- Nametags ESP
+    local nametagsFrame = Instance.new("Frame")
+    nametagsFrame.Size = UDim2.new(1, 0, 0, 30)
+    nametagsFrame.BackgroundTransparency = 1
+    nametagsFrame.Parent = visualsFrame
+
+    local nametagsBtn = Instance.new("TextButton")
+    nametagsBtn.Size = UDim2.new(1, 0, 1, 0)
+    nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
+    nametagsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nametagsBtn.Font = Enum.Font.GothamBold
+    nametagsBtn.Parent = nametagsFrame
+
+    local nametagsCorner = Instance.new("UICorner")
+    nametagsCorner.CornerRadius = UDim.new(0, 4)
+    nametagsCorner.Parent = nametagsBtn
+
+    -- Skeleton ESP
+    local skeletonFrame = Instance.new("Frame")
+    skeletonFrame.Size = UDim2.new(1, 0, 0, 30)
+    skeletonFrame.Position = UDim2.new(0, 0, 0, 35)
+    skeletonFrame.BackgroundTransparency = 1
+    skeletonFrame.Parent = visualsFrame
+
+    local skeletonBtn = Instance.new("TextButton")
+    skeletonBtn.Size = UDim2.new(1, 0, 1, 0)
+    skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    skeletonBtn.Text = udhl_settings.SkeletonESP and "SKELETON ESP: ON" or "SKELETON ESP: OFF"
+    skeletonBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    skeletonBtn.Font = Enum.Font.GothamBold
+    skeletonBtn.Parent = skeletonFrame
+
+    local skeletonCorner = Instance.new("UICorner")
+    skeletonCorner.CornerRadius = UDim.new(0, 4)
+    skeletonCorner.Parent = skeletonBtn
+
+    -- Box ESP
+    local boxFrame = Instance.new("Frame")
+    boxFrame.Size = UDim2.new(1, 0, 0, 30)
+    boxFrame.Position = UDim2.new(0, 0, 0, 70)
+    boxFrame.BackgroundTransparency = 1
+    boxFrame.Parent = visualsFrame
+
+    local boxBtn = Instance.new("TextButton")
+    boxBtn.Size = UDim2.new(1, 0, 1, 0)
+    boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
+    boxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    boxBtn.Font = Enum.Font.GothamBold
+    boxBtn.Parent = boxFrame
+
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.Parent = boxBtn
+
+    -- Connections
+    nametagsBtn.MouseButton1Click:Connect(function()
+        udhl_settings.NametagsESP = not udhl_settings.NametagsESP
+        nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
+    end)
+
+    skeletonBtn.MouseButton1Click:Connect(function()
+        udhl_settings.SkeletonESP = not udhl_settings.SkeletonESP
+        skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        skeletonBtn.Text = udhl_settings.SkeletonESP and "SKELETON ESP: ON" or "SKELETON ESP: OFF"
+    end)
+
+    boxBtn.MouseButton1Click:Connect(function()
+        udhl_settings.BoxESP = not udhl_settings.BoxESP
+        boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
+    end)
+    
+    return visualsFrame
+end
+
+-- Info category
+categoryContents.Info = function(parent)
+    local infoFrame = Instance.new("Frame")
+    infoFrame.Size = UDim2.new(1, 0, 1, 0)
+    infoFrame.BackgroundTransparency = 1
+    infoFrame.Parent = parent
+    
+    -- Discord button
+    local discordFrame = Instance.new("Frame")
+    discordFrame.Size = UDim2.new(1, 0, 0, 40)
+    discordFrame.BackgroundTransparency = 1
+    discordFrame.Parent = infoFrame
+
+    local discordBtn = Instance.new("TextButton")
+    discordBtn.Size = UDim2.new(1, 0, 1, 0)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    discordBtn.Text = "COPY DISCORD LINK"
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.Font = Enum.Font.GothamBold
+    discordBtn.Parent = discordFrame
+
+    local discordCorner = Instance.new("UICorner")
+    discordCorner.CornerRadius = UDim.new(0, 4)
+    discordCorner.Parent = discordBtn
+
+    -- Info text
+    local infoText = Instance.new("TextLabel")
+    infoText.Size = UDim2.new(1, 0, 0, 100)
+    infoText.Position = UDim2.new(0, 0, 0, 50)
+    infoText.BackgroundTransparency = 1
+    infoText.Text = "UDHL Version 1.1.2\n\nMade for enhanced gameplay experience\n\nJoin our Discord for updates and support!"
+    infoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    infoText.TextSize = 14
+    infoText.Font = Enum.Font.Gotham
+    infoText.TextYAlignment = Enum.TextYAlignment.Top
+    infoText.Parent = infoFrame
+
+    -- Connection
+    discordBtn.MouseButton1Click:Connect(function()
+        local discordLink = "discord.gg/sFRbAWrCCb"
+        pcall(function()
+            setclipboard(discordLink)
+        end)
+        discordBtn.Text = "COPIED!"
+        wait(1)
+        discordBtn.Text = "COPY DISCORD LINK"
+    end)
+    
+    return infoFrame
+end
+
+-- Function to update category display
+function updateCategoryDisplay()
+    for _, child in ipairs(contentFrame:GetChildren()) do
+        child:Destroy()
+    end
+    categoryContents[currentCategory](contentFrame)
+end
+
+-- Mobile toggle button
+local mobileBtn = Instance.new("TextButton")
+mobileBtn.Size = UDim2.new(0, 40, 0, 40)
+mobileBtn.Position = UDim2.new(1, 10, 0, 0)
+mobileBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+mobileBtn.Text = "≡"
+mobileBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+mobileBtn.TextSize = 20
+mobileBtn.Visible = UserInputService.TouchEnabled
+mobileBtn.Parent = mainFrame
+
+local mobileCorner = Instance.new("UICorner")
+mobileCorner.CornerRadius = UDim.new(0, 20)
+mobileCorner.Parent = mobileBtn
+
+-- Make GUI draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Make mobile button draggable too
+local mobileDragging
+local mobileDragInput
+local mobileDragStart
+local mobileStartPos
+
+mobileBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mobileDragging = true
+        mobileDragStart = input.Position
+        mobileStartPos = mobileBtn.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mobileDragging = false
+            end
+        end)
+    end
+end)
+
+mobileBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        mobileDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == mobileDragInput and mobileDragging then
+        local delta = input.Position - mobileDragStart
+        mobileBtn.Position = UDim2.new(mobileStartPos.X.Scale, mobileStartPos.X.Offset + delta.X, mobileStartPos.Y.Scale, mobileStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- GUI functionality
+local guiVisible = true
+
+mobileBtn.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    contentFrame.Visible = guiVisible
+    title.Visible = guiVisible
+    categoriesFrame.Visible = guiVisible
+end)
+
+-- Initialize first category
+updateCategoryDisplay()
+
+-- CFrame Speed functionality
+local cfSpeedConnection
+local function updateCFrameSpeed()
+    if cfSpeedConnection then
+        cfSpeedConnection:Disconnect()
+        cfSpeedConnection = nil
+    end
+    
+    if udhl_settings.CFrameSpeed then
+        cfSpeedConnection = RunService.Heartbeat:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local root = player.Character.HumanoidRootPart
+                root.CFrame = root.CFrame + root.CFrame.LookVector * (udhl_settings.SpeedValue / 100)
+            end
+        end)
+    end
+end
+
+-- Monitor CFrame Speed changes
+while true do
+    updateCFrameSpeed()
+    wait(0.5)
+end
+
+-- Main hitbox expansion loop (unchanged from original)
+RunService.RenderStepped:Connect(function()
+    if not udhl_settings.Disabled then
+        for i, v in next, Players:GetPlayers() do
+            if v ~= player then
+                pcall(function()
+                    if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        local rootPart = v.Character.HumanoidRootPart
+                        
+                        -- Apply hitbox expansion
+                        rootPart.Size = Vector3.new(udhl_settings.HeadSize, udhl_settings.HeadSize, udhl_settings.HeadSize)
+                        rootPart.Transparency = udhl_settings.Transparency
+                        rootPart.BrickColor = BrickColor.new("Really blue")
+                        rootPart.Material = "Neon"
+                        rootPart.CanCollide = false
+                        
+                        -- Protection system - constantly reapply if game tries to reset
+                        if udhl_settings.Protection then
+                            if rootPart.Size ~= Vector3.new(udhl_settings.HeadSize, udhl_settings.HeadSize, udhl_settings.HeadSize) then
+                                rootPart.Size = Vector3.new(udhl_settings.HeadSize, udhl_settings.HeadSize, udhl_settings.HeadSize)
+                            end
+                            if rootPart.Transparency ~= udhl_settings.Transparency then
+                                rootPart.Transparency = udhl_settings.Transparency
+                            end
+                            if rootPart.CanCollide == true then
+                                rootPart.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    else
+        -- Reset hitboxes when disabled
+        for i, v in next, Players:GetPlayers() do
+            if v ~= player then
+                pcall(function()
+                    if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        local rootPart = v.Character.HumanoidRootPart
+                        -- Reset to default size
+                        rootPart.Size = Vector3.new(2, 2, 1)
+                        rootPart.Transparency = 0
+                        rootPart.CanCollide = true
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+-- Auto-reapply when players spawn
+Players.PlayerAdded:Connect(function(v)
+    if v ~= player then
+        v.CharacterAdded:Connect(function(char)
+            wait(1) -- Wait for character to load
+            if not udhl_settings.Disabled then
+                pcall(function()
+                    local rootPart = char:WaitForChild("HumanoidRootPart")
+                    rootPart.Size = Vector3.new(udhl_settings.HeadSize, udhl_settings.HeadSize, udhl_settings.HeadSize)
+                    rootPart.Transparency = udhl_settings.Transparency
+                    rootPart.BrickColor = BrickColor.new("Really blue")
+                    rootPart.Material = "Neon"
+                    rootPart.CanCollide = false
+                end)
+            end
+        end)
+    end
+end)
+
+-- Apply to existing players
+for i, v in next, Players:GetPlayers() do
+    if v ~= player and v.Character then
+        pcall(function()
+            local rootPart = v.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart and not udhl_settings.Disabled then
+                rootPart.Size = Vector3.new(udhl_settings.HeadSize, udhl_settings.HeadSize, udhl_settings.HeadSize)
+                rootPart.Transparency = udhl_settings.Transparency
+                rootPart.BrickColor = BrickColor.new("Really blue")
+                rootPart.Material = "Neon"
+                rootPart.CanCollide = false
+            end
+        end)
+    end
+end
