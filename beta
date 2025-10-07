@@ -25,6 +25,12 @@ local udhl_settings = {
     BoxESP = false
 }
 
+-- ESP variables
+local espFolders = {}
+local nametags = {}
+local skeletons = {}
+local boxes = {}
+
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "UDHL_GUI"
@@ -32,9 +38,9 @@ screenGui.Parent = CoreGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 280, 0, 320)
+mainFrame.Size = UDim2.new(0, 300, 0, 350)
 mainFrame.Position = UDim2.new(0, 10, 0, 10)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
@@ -44,12 +50,12 @@ corner.Parent = mainFrame
 
 -- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 title.BorderSizePixel = 0
 title.Text = "UDHL 1.1.2"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 16
+title.TextSize = 18
 title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
@@ -59,8 +65,8 @@ titleCorner.Parent = title
 
 -- Category buttons
 local categoriesFrame = Instance.new("Frame")
-categoriesFrame.Size = UDim2.new(1, -20, 0, 25)
-categoriesFrame.Position = UDim2.new(0, 10, 0, 35)
+categoriesFrame.Size = UDim2.new(1, -20, 0, 30)
+categoriesFrame.Position = UDim2.new(0, 10, 0, 45)
 categoriesFrame.BackgroundTransparency = 1
 categoriesFrame.Parent = mainFrame
 
@@ -70,25 +76,56 @@ local currentCategory = "Combat"
 
 for i, category in pairs(categories) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.23, 0, 1, 0)
+    btn.Size = UDim2.new(0.23, -2, 1, 0)
     btn.Position = UDim2.new(0.23 * (i-1), 0, 0, 0)
-    btn.BackgroundColor3 = category == currentCategory and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+    btn.BackgroundColor3 = category == currentCategory and Color3.fromRGB(65, 65, 85) or Color3.fromRGB(45, 45, 55)
     btn.Text = category
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.TextSize = 12
-    btn.Font = Enum.Font.Gotham
+    btn.Font = Enum.Font.GothamSemibold
     btn.Parent = categoriesFrame
     
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = btn
+    
+    -- Add underline for active category
+    if category == currentCategory then
+        local underline = Instance.new("Frame")
+        underline.Size = UDim2.new(1, 0, 0, 2)
+        underline.Position = UDim2.new(0, 0, 1, -2)
+        underline.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+        underline.BorderSizePixel = 0
+        underline.Parent = btn
+        
+        local underlineCorner = Instance.new("UICorner")
+        underlineCorner.CornerRadius = UDim.new(0, 1)
+        underlineCorner.Parent = underline
+    end
     
     categoryButtons[category] = btn
     
     btn.MouseButton1Click:Connect(function()
         currentCategory = category
         for cat, button in pairs(categoryButtons) do
-            button.BackgroundColor3 = cat == category and Color3.fromRGB(60, 60, 80) or Color3.fromRGB(40, 40, 50)
+            button.BackgroundColor3 = cat == category and Color3.fromRGB(65, 65, 85) or Color3.fromRGB(45, 45, 55)
+            -- Update underline
+            local existingUnderline = button:FindFirstChildOfClass("Frame")
+            if existingUnderline then
+                existingUnderline:Destroy()
+            end
+            if cat == category then
+                local underline = Instance.new("Frame")
+                underline.Size = UDim2.new(1, 0, 0, 2)
+                underline.Position = UDim2.new(0, 0, 1, -2)
+                underline.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+                underline.BorderSizePixel = 0
+                underline.Parent = button
+                
+                local underlineCorner = Instance.new("UICorner")
+                underlineCorner.CornerRadius = UDim.new(0, 1)
+                underlineCorner.Parent = underline
+            end
         end
         updateCategoryDisplay()
     end)
@@ -96,8 +133,8 @@ end
 
 -- Content frame
 local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 1, -70)
-contentFrame.Position = UDim2.new(0, 10, 0, 65)
+contentFrame.Size = UDim2.new(1, -20, 1, -85)
+contentFrame.Position = UDim2.new(0, 10, 0, 80)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = mainFrame
 
@@ -113,7 +150,7 @@ categoryContents.Combat = function(parent)
     
     -- HeadSize slider
     local sizeFrame = Instance.new("Frame")
-    sizeFrame.Size = UDim2.new(1, 0, 0, 30)
+    sizeFrame.Size = UDim2.new(1, 0, 0, 35)
     sizeFrame.BackgroundTransparency = 1
     sizeFrame.Parent = combatFrame
 
@@ -123,6 +160,8 @@ categoryContents.Combat = function(parent)
     sizeLabel.Text = "Head Size: " .. udhl_settings.HeadSize
     sizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sizeLabel.TextSize = 14
+    sizeLabel.Font = Enum.Font.Gotham
     sizeLabel.Parent = sizeFrame
 
     local sizeBox = Instance.new("TextBox")
@@ -132,6 +171,9 @@ categoryContents.Combat = function(parent)
     sizeBox.Text = tostring(udhl_settings.HeadSize)
     sizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     sizeBox.PlaceholderText = "Size"
+    sizeBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    sizeBox.TextSize = 14
+    sizeBox.Font = Enum.Font.Gotham
     sizeBox.Parent = sizeFrame
 
     local boxCorner = Instance.new("UICorner")
@@ -140,8 +182,8 @@ categoryContents.Combat = function(parent)
 
     -- Transparency slider
     local transFrame = Instance.new("Frame")
-    transFrame.Size = UDim2.new(1, 0, 0, 30)
-    transFrame.Position = UDim2.new(0, 0, 0, 35)
+    transFrame.Size = UDim2.new(1, 0, 0, 35)
+    transFrame.Position = UDim2.new(0, 0, 0, 40)
     transFrame.BackgroundTransparency = 1
     transFrame.Parent = combatFrame
 
@@ -151,6 +193,8 @@ categoryContents.Combat = function(parent)
     transLabel.Text = "Transparency: " .. udhl_settings.Transparency
     transLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     transLabel.TextXAlignment = Enum.TextXAlignment.Left
+    transLabel.TextSize = 14
+    transLabel.Font = Enum.Font.Gotham
     transLabel.Parent = transFrame
 
     local transBox = Instance.new("TextBox")
@@ -160,6 +204,9 @@ categoryContents.Combat = function(parent)
     transBox.Text = tostring(udhl_settings.Transparency)
     transBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     transBox.PlaceholderText = "0-1"
+    transBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    transBox.TextSize = 14
+    transBox.Font = Enum.Font.Gotham
     transBox.Parent = transFrame
 
     local transCorner = Instance.new("UICorner")
@@ -168,36 +215,38 @@ categoryContents.Combat = function(parent)
 
     -- Toggle buttons
     local toggleFrame = Instance.new("Frame")
-    toggleFrame.Size = UDim2.new(1, 0, 0, 80)
-    toggleFrame.Position = UDim2.new(0, 0, 0, 70)
+    toggleFrame.Size = UDim2.new(1, 0, 0, 90)
+    toggleFrame.Position = UDim2.new(0, 0, 0, 80)
     toggleFrame.BackgroundTransparency = 1
     toggleFrame.Parent = combatFrame
 
     -- Enable/Disable button
     local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1, 0, 0, 30)
-    toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(50, 255, 50)
+    toggleBtn.Size = UDim2.new(1, 0, 0, 35)
+    toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 200, 50)
     toggleBtn.Text = udhl_settings.Disabled and "HITBOX: DISABLED" or "HITBOX: ENABLED"
     toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.TextSize = 14
     toggleBtn.Font = Enum.Font.GothamBold
     toggleBtn.Parent = toggleFrame
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = toggleBtn
 
     -- Protection button
     local protectBtn = Instance.new("TextButton")
-    protectBtn.Size = UDim2.new(1, 0, 0, 30)
-    protectBtn.Position = UDim2.new(0, 0, 0, 40)
-    protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 150, 255) or Color3.fromRGB(100, 100, 100)
+    protectBtn.Size = UDim2.new(1, 0, 0, 35)
+    protectBtn.Position = UDim2.new(0, 0, 0, 45)
+    protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 120, 220) or Color3.fromRGB(80, 80, 80)
     protectBtn.Text = udhl_settings.Protection and "PROTECTION: ON" or "PROTECTION: OFF"
     protectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    protectBtn.TextSize = 14
     protectBtn.Font = Enum.Font.GothamBold
     protectBtn.Parent = toggleFrame
 
     local protectCorner = Instance.new("UICorner")
-    protectCorner.CornerRadius = UDim.new(0, 4)
+    protectCorner.CornerRadius = UDim.new(0, 6)
     protectCorner.Parent = protectBtn
 
     -- Connections
@@ -223,13 +272,13 @@ categoryContents.Combat = function(parent)
 
     toggleBtn.MouseButton1Click:Connect(function()
         udhl_settings.Disabled = not udhl_settings.Disabled
-        toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(50, 255, 50)
+        toggleBtn.BackgroundColor3 = udhl_settings.Disabled and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 200, 50)
         toggleBtn.Text = udhl_settings.Disabled and "HITBOX: DISABLED" or "HITBOX: ENABLED"
     end)
 
     protectBtn.MouseButton1Click:Connect(function()
         udhl_settings.Protection = not udhl_settings.Protection
-        protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 150, 255) or Color3.fromRGB(100, 100, 100)
+        protectBtn.BackgroundColor3 = udhl_settings.Protection and Color3.fromRGB(50, 120, 220) or Color3.fromRGB(80, 80, 80)
         protectBtn.Text = udhl_settings.Protection and "PROTECTION: ON" or "PROTECTION: OFF"
     end)
     
@@ -245,7 +294,7 @@ categoryContents.Movement = function(parent)
     
     -- Speed value
     local speedFrame = Instance.new("Frame")
-    speedFrame.Size = UDim2.new(1, 0, 0, 30)
+    speedFrame.Size = UDim2.new(1, 0, 0, 35)
     speedFrame.BackgroundTransparency = 1
     speedFrame.Parent = movementFrame
 
@@ -255,6 +304,8 @@ categoryContents.Movement = function(parent)
     speedLabel.Text = "Speed Value: " .. udhl_settings.SpeedValue
     speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.TextSize = 14
+    speedLabel.Font = Enum.Font.Gotham
     speedLabel.Parent = speedFrame
 
     local speedBox = Instance.new("TextBox")
@@ -264,6 +315,9 @@ categoryContents.Movement = function(parent)
     speedBox.Text = tostring(udhl_settings.SpeedValue)
     speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     speedBox.PlaceholderText = "Speed"
+    speedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    speedBox.TextSize = 14
+    speedBox.Font = Enum.Font.Gotham
     speedBox.Parent = speedFrame
 
     local speedCorner = Instance.new("UICorner")
@@ -278,15 +332,16 @@ categoryContents.Movement = function(parent)
     speedToggleFrame.Parent = movementFrame
 
     local speedBtn = Instance.new("TextButton")
-    speedBtn.Size = UDim2.new(1, 0, 0, 30)
-    speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    speedBtn.Size = UDim2.new(1, 0, 0, 35)
+    speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
     speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
     speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedBtn.TextSize = 14
     speedBtn.Font = Enum.Font.GothamBold
     speedBtn.Parent = speedToggleFrame
 
     local speedBtnCorner = Instance.new("UICorner")
-    speedBtnCorner.CornerRadius = UDim.new(0, 4)
+    speedBtnCorner.CornerRadius = UDim.new(0, 6)
     speedBtnCorner.Parent = speedBtn
 
     -- Connections
@@ -302,7 +357,7 @@ categoryContents.Movement = function(parent)
 
     speedBtn.MouseButton1Click:Connect(function()
         udhl_settings.CFrameSpeed = not udhl_settings.CFrameSpeed
-        speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
     end)
     
@@ -318,77 +373,83 @@ categoryContents.Visuals = function(parent)
     
     -- Nametags ESP
     local nametagsFrame = Instance.new("Frame")
-    nametagsFrame.Size = UDim2.new(1, 0, 0, 30)
+    nametagsFrame.Size = UDim2.new(1, 0, 0, 35)
     nametagsFrame.BackgroundTransparency = 1
     nametagsFrame.Parent = visualsFrame
 
     local nametagsBtn = Instance.new("TextButton")
     nametagsBtn.Size = UDim2.new(1, 0, 1, 0)
-    nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
     nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
     nametagsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nametagsBtn.TextSize = 14
     nametagsBtn.Font = Enum.Font.GothamBold
     nametagsBtn.Parent = nametagsFrame
 
     local nametagsCorner = Instance.new("UICorner")
-    nametagsCorner.CornerRadius = UDim.new(0, 4)
+    nametagsCorner.CornerRadius = UDim.new(0, 6)
     nametagsCorner.Parent = nametagsBtn
 
     -- Skeleton ESP
     local skeletonFrame = Instance.new("Frame")
-    skeletonFrame.Size = UDim2.new(1, 0, 0, 30)
-    skeletonFrame.Position = UDim2.new(0, 0, 0, 35)
+    skeletonFrame.Size = UDim2.new(1, 0, 0, 35)
+    skeletonFrame.Position = UDim2.new(0, 0, 0, 40)
     skeletonFrame.BackgroundTransparency = 1
     skeletonFrame.Parent = visualsFrame
 
     local skeletonBtn = Instance.new("TextButton")
     skeletonBtn.Size = UDim2.new(1, 0, 1, 0)
-    skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
     skeletonBtn.Text = udhl_settings.SkeletonESP and "SKELETON ESP: ON" or "SKELETON ESP: OFF"
     skeletonBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    skeletonBtn.TextSize = 14
     skeletonBtn.Font = Enum.Font.GothamBold
     skeletonBtn.Parent = skeletonFrame
 
     local skeletonCorner = Instance.new("UICorner")
-    skeletonCorner.CornerRadius = UDim.new(0, 4)
+    skeletonCorner.CornerRadius = UDim.new(0, 6)
     skeletonCorner.Parent = skeletonBtn
 
     -- Box ESP
     local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 0, 30)
-    boxFrame.Position = UDim2.new(0, 0, 0, 70)
+    boxFrame.Size = UDim2.new(1, 0, 0, 35)
+    boxFrame.Position = UDim2.new(0, 0, 0, 80)
     boxFrame.BackgroundTransparency = 1
     boxFrame.Parent = visualsFrame
 
     local boxBtn = Instance.new("TextButton")
     boxBtn.Size = UDim2.new(1, 0, 1, 0)
-    boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+    boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
     boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
     boxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    boxBtn.TextSize = 14
     boxBtn.Font = Enum.Font.GothamBold
     boxBtn.Parent = boxFrame
 
     local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.CornerRadius = UDim.new(0, 6)
     boxCorner.Parent = boxBtn
 
     -- Connections
     nametagsBtn.MouseButton1Click:Connect(function()
         udhl_settings.NametagsESP = not udhl_settings.NametagsESP
-        nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
+        updateESP()
     end)
 
     skeletonBtn.MouseButton1Click:Connect(function()
         udhl_settings.SkeletonESP = not udhl_settings.SkeletonESP
-        skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        skeletonBtn.BackgroundColor3 = udhl_settings.SkeletonESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         skeletonBtn.Text = udhl_settings.SkeletonESP and "SKELETON ESP: ON" or "SKELETON ESP: OFF"
+        updateESP()
     end)
 
     boxBtn.MouseButton1Click:Connect(function()
         udhl_settings.BoxESP = not udhl_settings.BoxESP
-        boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+        boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
+        updateESP()
     end)
     
     return visualsFrame
@@ -412,23 +473,25 @@ categoryContents.Info = function(parent)
     discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
     discordBtn.Text = "COPY DISCORD LINK"
     discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.TextSize = 14
     discordBtn.Font = Enum.Font.GothamBold
     discordBtn.Parent = discordFrame
 
     local discordCorner = Instance.new("UICorner")
-    discordCorner.CornerRadius = UDim.new(0, 4)
+    discordCorner.CornerRadius = UDim.new(0, 6)
     discordCorner.Parent = discordBtn
 
     -- Info text
     local infoText = Instance.new("TextLabel")
-    infoText.Size = UDim2.new(1, 0, 0, 100)
+    infoText.Size = UDim2.new(1, 0, 0, 120)
     infoText.Position = UDim2.new(0, 0, 0, 50)
     infoText.BackgroundTransparency = 1
-    infoText.Text = "UDHL Version 1.1.2\n\nMade for enhanced gameplay experience\n\nJoin our Discord for updates and support!"
+    infoText.Text = "UDHL Version 1.1.2\n\nEnhanced gameplay experience\n\nJoin our Discord for updates and support!"
     infoText.TextColor3 = Color3.fromRGB(255, 255, 255)
     infoText.TextSize = 14
     infoText.Font = Enum.Font.Gotham
     infoText.TextYAlignment = Enum.TextYAlignment.Top
+    infoText.TextWrapped = true
     infoText.Parent = infoFrame
 
     -- Connection
@@ -551,6 +614,168 @@ end)
 -- Initialize first category
 updateCategoryDisplay()
 
+-- ESP Functions
+function createNametag(player)
+    if not player.Character or not player.Character:FindFirstChild("Head") then return end
+    
+    local head = player.Character.Head
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "UDHL_Nametag"
+    billboard.Adornee = head
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    frame.Parent = billboard
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 0.6, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextSize = 14
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = frame
+    
+    local distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Size = UDim2.new(1, 0, 0.4, 0)
+    distanceLabel.Position = UDim2.new(0, 0, 0.6, 0)
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceLabel.TextStrokeTransparency = 0
+    distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    distanceLabel.TextSize = 12
+    distanceLabel.Font = Enum.Font.Gotham
+    distanceLabel.Parent = frame
+    
+    nametags[player] = billboard
+    
+    -- Update distance
+    RunService.Heartbeat:Connect(function()
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Head") then
+            local distance = (player.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            distanceLabel.Text = tostring(math.floor(distance)) .. " studs"
+        end
+    end)
+end
+
+function createSkeleton(player)
+    if not player.Character then return end
+    
+    local character = player.Character
+    local folder = Instance.new("Folder")
+    folder.Name = "UDHL_Skeleton"
+    folder.Parent = workspace
+    
+    local connections = {}
+    
+    local function createLine(part1, part2)
+        if not part1 or not part2 then return end
+        
+        local attachment1 = Instance.new("Attachment")
+        attachment1.Parent = part1
+        
+        local attachment2 = Instance.new("Attachment")
+        attachment2.Parent = part2
+        
+        local beam = Instance.new("Beam")
+        beam.Attachment0 = attachment1
+        beam.Attachment1 = attachment2
+        beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+        beam.Width0 = 0.1
+        beam.Width1 = 0.1
+        beam.Parent = folder
+        
+        return {beam = beam, attachment1 = attachment1, attachment2 = attachment2}
+    end
+    
+    local function updateSkeleton()
+        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+        
+        local root = character.HumanoidRootPart
+        
+        -- Clear existing skeleton
+        for _, obj in pairs(folder:GetChildren()) do
+            obj:Destroy()
+        end
+        
+        -- Create skeleton lines
+        local parts = {
+            root,
+            character:FindFirstChild("Left Hip") and character:FindFirstChild("Left Hip").Part1,
+            character:FindFirstChild("Right Hip") and character:FindFirstChild("Right Hip").Part1,
+            character:FindFirstChild("Left Shoulder") and character:FindFirstChild("Left Shoulder").Part1,
+            character:FindFirstChild("Right Shoulder") and character:FindFirstChild("Right Shoulder").Part1,
+            character:FindFirstChild("Head")
+        }
+        
+        for i = 2, #parts do
+            if parts[i] then
+                createLine(root, parts[i])
+            end
+        end
+    end
+    
+    updateSkeleton()
+    skeletons[player] = folder
+end
+
+function createBox(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local root = player.Character.HumanoidRootPart
+    local box = Instance.new("BoxHandleAdornment")
+    box.Name = "UDHL_Box"
+    box.Adornee = root
+    box.Size = root.Size + Vector3.new(0.5, 0.5, 0.5)
+    box.Color3 = Color3.fromRGB(255, 255, 255)
+    box.Transparency = 0.7
+    box.AlwaysOnTop = true
+    box.ZIndex = 1
+    box.Parent = root
+    
+    boxes[player] = box
+end
+
+function updateESP()
+    -- Clear existing ESP
+    for player, nametag in pairs(nametags) do
+        nametag:Destroy()
+    end
+    nametags = {}
+    
+    for player, skeleton in pairs(skeletons) do
+        skeleton:Destroy()
+    end
+    skeletons = {}
+    
+    for player, box in pairs(boxes) do
+        box:Destroy()
+    end
+    boxes = {}
+    
+    -- Create new ESP based on settings
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            if udhl_settings.NametagsESP and player.Character then
+                createNametag(player)
+            end
+            if udhl_settings.SkeletonESP and player.Character then
+                createSkeleton(player)
+            end
+            if udhl_settings.BoxESP and player.Character then
+                createBox(player)
+            end
+        end
+    end
+end
+
 -- CFrame Speed functionality
 local cfSpeedConnection
 local function updateCFrameSpeed()
@@ -570,12 +795,14 @@ local function updateCFrameSpeed()
 end
 
 -- Monitor CFrame Speed changes
-while true do
-    updateCFrameSpeed()
-    wait(0.5)
-end
+spawn(function()
+    while true do
+        updateCFrameSpeed()
+        wait(0.5)
+    end
+end)
 
--- Main hitbox expansion loop (unchanged from original)
+-- Main hitbox expansion loop
 RunService.RenderStepped:Connect(function()
     if not udhl_settings.Disabled then
         for i, v in next, Players:GetPlayers() do
@@ -640,6 +867,7 @@ Players.PlayerAdded:Connect(function(v)
                     rootPart.CanCollide = false
                 end)
             end
+            updateESP()
         end)
     end
 end)
@@ -659,3 +887,6 @@ for i, v in next, Players:GetPlayers() do
         end)
     end
 end
+
+-- Initialize ESP
+updateESP()
