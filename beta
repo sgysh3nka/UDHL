@@ -22,14 +22,13 @@ local udhl_settings = {
     -- Visuals
     NametagsESP = false,
     SkeletonESP = false,
-    BoxESP = false
+    TracersESP = false  -- Заменили Box ESP на Tracers ESP
 }
 
 -- ESP variables
-local espFolders = {}
 local nametags = {}
 local skeletons = {}
-local boxes = {}
+local tracers = {}
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -53,7 +52,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 title.BorderSizePixel = 0
-title.Text = "UDHL 1.1.2"
+title.Text = "UDHL 1.1.3"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 18
 title.Font = Enum.Font.GothamBold
@@ -410,25 +409,25 @@ categoryContents.Visuals = function(parent)
     skeletonCorner.CornerRadius = UDim.new(0, 6)
     skeletonCorner.Parent = skeletonBtn
 
-    -- Box ESP
-    local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 0, 35)
-    boxFrame.Position = UDim2.new(0, 0, 0, 80)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.Parent = visualsFrame
+    -- Tracers ESP (заменили Box ESP)
+    local tracersFrame = Instance.new("Frame")
+    tracersFrame.Size = UDim2.new(1, 0, 0, 35)
+    tracersFrame.Position = UDim2.new(0, 0, 0, 80)
+    tracersFrame.BackgroundTransparency = 1
+    tracersFrame.Parent = visualsFrame
 
-    local boxBtn = Instance.new("TextButton")
-    boxBtn.Size = UDim2.new(1, 0, 1, 0)
-    boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-    boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
-    boxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    boxBtn.TextSize = 14
-    boxBtn.Font = Enum.Font.GothamBold
-    boxBtn.Parent = boxFrame
+    local tracersBtn = Instance.new("TextButton")
+    tracersBtn.Size = UDim2.new(1, 0, 1, 0)
+    tracersBtn.BackgroundColor3 = udhl_settings.TracersESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    tracersBtn.Text = udhl_settings.TracersESP and "TRACERS ESP: ON" or "TRACERS ESP: OFF"
+    tracersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tracersBtn.TextSize = 14
+    tracersBtn.Font = Enum.Font.GothamBold
+    tracersBtn.Parent = tracersFrame
 
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 6)
-    boxCorner.Parent = boxBtn
+    local tracersCorner = Instance.new("UICorner")
+    tracersCorner.CornerRadius = UDim.new(0, 6)
+    tracersCorner.Parent = tracersBtn
 
     -- Connections
     nametagsBtn.MouseButton1Click:Connect(function()
@@ -445,10 +444,10 @@ categoryContents.Visuals = function(parent)
         updateESP()
     end)
 
-    boxBtn.MouseButton1Click:Connect(function()
-        udhl_settings.BoxESP = not udhl_settings.BoxESP
-        boxBtn.BackgroundColor3 = udhl_settings.BoxESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-        boxBtn.Text = udhl_settings.BoxESP and "BOX ESP: ON" or "BOX ESP: OFF"
+    tracersBtn.MouseButton1Click:Connect(function()
+        udhl_settings.TracersESP = not udhl_settings.TracersESP
+        tracersBtn.BackgroundColor3 = udhl_settings.TracersESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        tracersBtn.Text = udhl_settings.TracersESP and "TRACERS ESP: ON" or "TRACERS ESP: OFF"
         updateESP()
     end)
     
@@ -486,7 +485,7 @@ categoryContents.Info = function(parent)
     infoText.Size = UDim2.new(1, 0, 0, 120)
     infoText.Position = UDim2.new(0, 0, 0, 50)
     infoText.BackgroundTransparency = 1
-    infoText.Text = "UDHL Version 1.1.2\n\nEnhanced gameplay experience\n\nJoin our Discord for updates and support!"
+    infoText.Text = "UDHL Version 1.1.3\n\nEnhanced gameplay experience\n\nJoin our Discord for updates and support!"
     infoText.TextColor3 = Color3.fromRGB(255, 255, 255)
     infoText.TextSize = 14
     infoText.Font = Enum.Font.Gotham
@@ -515,21 +514,6 @@ function updateCategoryDisplay()
     end
     categoryContents[currentCategory](contentFrame)
 end
-
--- Mobile toggle button
-local mobileBtn = Instance.new("TextButton")
-mobileBtn.Size = UDim2.new(0, 40, 0, 40)
-mobileBtn.Position = UDim2.new(1, 10, 0, 0)
-mobileBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
-mobileBtn.Text = "≡"
-mobileBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-mobileBtn.TextSize = 20
-mobileBtn.Visible = UserInputService.TouchEnabled
-mobileBtn.Parent = mainFrame
-
-local mobileCorner = Instance.new("UICorner")
-mobileCorner.CornerRadius = UDim.new(0, 20)
-mobileCorner.Parent = mobileBtn
 
 -- Make GUI draggable
 local dragging
@@ -566,49 +550,6 @@ UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
     end
-end)
-
--- Make mobile button draggable too
-local mobileDragging
-local mobileDragInput
-local mobileDragStart
-local mobileStartPos
-
-mobileBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        mobileDragging = true
-        mobileDragStart = input.Position
-        mobileStartPos = mobileBtn.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                mobileDragging = false
-            end
-        end)
-    end
-end)
-
-mobileBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        mobileDragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == mobileDragInput and mobileDragging then
-        local delta = input.Position - mobileDragStart
-        mobileBtn.Position = UDim2.new(mobileStartPos.X.Scale, mobileStartPos.X.Offset + delta.X, mobileStartPos.Y.Scale, mobileStartPos.Y.Offset + delta.Y)
-    end
-end)
-
--- GUI functionality
-local guiVisible = true
-
-mobileBtn.MouseButton1Click:Connect(function()
-    guiVisible = not guiVisible
-    contentFrame.Visible = guiVisible
-    title.Visible = guiVisible
-    categoriesFrame.Visible = guiVisible
 end)
 
 -- Initialize first category
@@ -673,9 +614,7 @@ function createSkeleton(player)
     folder.Name = "UDHL_Skeleton"
     folder.Parent = workspace
     
-    local connections = {}
-    
-    local function createLine(part1, part2)
+    local function createBone(part1, part2, color)
         if not part1 or not part2 then return end
         
         local attachment1 = Instance.new("Attachment")
@@ -687,9 +626,10 @@ function createSkeleton(player)
         local beam = Instance.new("Beam")
         beam.Attachment0 = attachment1
         beam.Attachment1 = attachment2
-        beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-        beam.Width0 = 0.1
-        beam.Width1 = 0.1
+        beam.Color = ColorSequence.new(color or Color3.fromRGB(255, 255, 255))
+        beam.Width0 = 0.15
+        beam.Width1 = 0.15
+        beam.Brightness = 2
         beam.Parent = folder
         
         return {beam = beam, attachment1 = attachment1, attachment2 = attachment2}
@@ -699,48 +639,109 @@ function createSkeleton(player)
         if not character or not character:FindFirstChild("HumanoidRootPart") then return end
         
         local root = character.HumanoidRootPart
+        local head = character:FindFirstChild("Head")
+        local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+        local leftArm = character:FindFirstChild("LeftUpperArm") or character:FindFirstChild("Left Arm")
+        local leftForearm = character:FindFirstChild("LeftLowerArm") or character:FindFirstChild("Left Arm")
+        local rightArm = character:FindFirstChild("RightUpperArm") or character:FindFirstChild("Right Arm")
+        local rightForearm = character:FindFirstChild("RightLowerArm") or character:FindFirstChild("Right Arm")
+        local leftLeg = character:FindFirstChild("LeftUpperLeg") or character:FindFirstChild("Left Leg")
+        local leftShin = character:FindFirstChild("LeftLowerLeg") or character:FindFirstChild("Left Leg")
+        local rightLeg = character:FindFirstChild("RightUpperLeg") or character:FindFirstChild("Right Leg")
+        local rightShin = character:FindFirstChild("RightLowerLeg") or character:FindFirstChild("Right Leg")
         
         -- Clear existing skeleton
         for _, obj in pairs(folder:GetChildren()) do
             obj:Destroy()
         end
         
-        -- Create skeleton lines
-        local parts = {
-            root,
-            character:FindFirstChild("Left Hip") and character:FindFirstChild("Left Hip").Part1,
-            character:FindFirstChild("Right Hip") and character:FindFirstChild("Right Hip").Part1,
-            character:FindFirstChild("Left Shoulder") and character:FindFirstChild("Left Shoulder").Part1,
-            character:FindFirstChild("Right Shoulder") and character:FindFirstChild("Right Shoulder").Part1,
-            character:FindFirstChild("Head")
-        }
+        -- Create skeleton bones
+        if head and torso then
+            createBone(torso, head, Color3.fromRGB(255, 255, 255)) -- Шея
+        end
         
-        for i = 2, #parts do
-            if parts[i] then
-                createLine(root, parts[i])
-            end
+        if torso and leftArm then
+            createBone(torso, leftArm, Color3.fromRGB(255, 100, 100)) -- Левое плечо
+        end
+        
+        if leftArm and leftForearm then
+            createBone(leftArm, leftForearm, Color3.fromRGB(255, 150, 150)) -- Левое предплечье
+        end
+        
+        if torso and rightArm then
+            createBone(torso, rightArm, Color3.fromRGB(100, 100, 255)) -- Правое плечо
+        end
+        
+        if rightArm and rightForearm then
+            createBone(rightArm, rightForearm, Color3.fromRGB(150, 150, 255)) -- Правое предплечье
+        end
+        
+        if torso and leftLeg then
+            createBone(torso, leftLeg, Color3.fromRGB(255, 255, 100)) -- Левое бедро
+        end
+        
+        if leftLeg and leftShin then
+            createBone(leftLeg, leftShin, Color3.fromRGB(255, 255, 150)) -- Левая голень
+        end
+        
+        if torso and rightLeg then
+            createBone(torso, rightLeg, Color3.fromRGB(100, 255, 100)) -- Правое бедро
+        end
+        
+        if rightLeg and rightShin then
+            createBone(rightLeg, rightShin, Color3.fromRGB(150, 255, 150)) -- Правая голень
         end
     end
     
     updateSkeleton()
-    skeletons[player] = folder
+    
+    -- Update skeleton when character moves
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if not character or not character.Parent then
+            connection:Disconnect()
+            return
+        end
+        updateSkeleton()
+    end)
+    
+    skeletons[player] = {folder = folder, connection = connection}
 end
 
-function createBox(player)
+function createTracer(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     
     local root = player.Character.HumanoidRootPart
-    local box = Instance.new("BoxHandleAdornment")
-    box.Name = "UDHL_Box"
-    box.Adornee = root
-    box.Size = root.Size + Vector3.new(0.5, 0.5, 0.5)
-    box.Color3 = Color3.fromRGB(255, 255, 255)
-    box.Transparency = 0.7
-    box.AlwaysOnTop = true
-    box.ZIndex = 1
-    box.Parent = root
     
-    boxes[player] = box
+    -- Create a line from bottom of screen to player
+    local beam = Instance.new("Beam")
+    beam.Name = "UDHL_Tracer"
+    beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    beam.Width0 = 0.1
+    beam.Width1 = 0.1
+    beam.Brightness = 2
+    
+    local attachment1 = Instance.new("Attachment")
+    attachment1.Parent = workspace.CurrentCamera
+    
+    local attachment2 = Instance.new("Attachment")
+    attachment2.Parent = root
+    
+    beam.Attachment0 = attachment1
+    beam.Attachment1 = attachment2
+    beam.Parent = workspace.CurrentCamera
+    
+    tracers[player] = {beam = beam, attachment1 = attachment1, attachment2 = attachment2}
+    
+    -- Update tracer position (bottom center of screen)
+    RunService.Heartbeat:Connect(function()
+        if attachment1 and workspace.CurrentCamera then
+            local screenPos = workspace.CurrentCamera:WorldToScreenPoint(root.Position)
+            if screenPos.Z > 0 then
+                attachment1.WorldPosition = workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.LookVector * 5
+            end
+        end
+    end)
 end
 
 function updateESP()
@@ -750,34 +751,42 @@ function updateESP()
     end
     nametags = {}
     
-    for player, skeleton in pairs(skeletons) do
-        skeleton:Destroy()
+    for player, skeletonData in pairs(skeletons) do
+        if skeletonData.connection then
+            skeletonData.connection:Disconnect()
+        end
+        skeletonData.folder:Destroy()
     end
     skeletons = {}
     
-    for player, box in pairs(boxes) do
-        box:Destroy()
+    for player, tracerData in pairs(tracers) do
+        tracerData.beam:Destroy()
+        tracerData.attachment1:Destroy()
+        tracerData.attachment2:Destroy()
     end
-    boxes = {}
+    tracers = {}
     
     -- Create new ESP based on settings
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            if udhl_settings.NametagsESP and player.Character then
+        if player ~= Players.LocalPlayer and player.Character then
+            if udhl_settings.NametagsESP then
                 createNametag(player)
             end
-            if udhl_settings.SkeletonESP and player.Character then
+            if udhl_settings.SkeletonESP then
                 createSkeleton(player)
             end
-            if udhl_settings.BoxESP and player.Character then
-                createBox(player)
+            if udhl_settings.TracersESP then
+                createTracer(player)
             end
         end
     end
 end
 
--- CFrame Speed functionality
+-- Improved CFrame Speed functionality
 local cfSpeedConnection
+local lastInputTime = 0
+local inputThreshold = 0.1 -- 100ms threshold
+
 local function updateCFrameSpeed()
     if cfSpeedConnection then
         cfSpeedConnection:Disconnect()
@@ -786,13 +795,31 @@ local function updateCFrameSpeed()
     
     if udhl_settings.CFrameSpeed then
         cfSpeedConnection = RunService.Heartbeat:Connect(function()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local root = player.Character.HumanoidRootPart
-                root.CFrame = root.CFrame + root.CFrame.LookVector * (udhl_settings.SpeedValue / 100)
+            -- Only move if there was recent input
+            if tick() - lastInputTime < inputThreshold then
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local root = player.Character.HumanoidRootPart
+                    root.CFrame = root.CFrame + root.CFrame.LookVector * (udhl_settings.SpeedValue / 100)
+                end
             end
         end)
     end
 end
+
+-- Track player input for CFrame Speed
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.A or 
+       input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.D or
+       input.UserInputType == Enum.UserInputType.Gamepad1 then
+        lastInputTime = tick()
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Gamepad1 then
+        lastInputTime = tick()
+    end
+end)
 
 -- Monitor CFrame Speed changes
 spawn(function()
