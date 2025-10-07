@@ -22,7 +22,7 @@ local udhl_settings = {
     -- Visuals
     NametagsESP = false,
     SkeletonESP = false,
-    TracersESP = false  -- Заменили Box ESP на Tracers ESP
+    TracersESP = false
 }
 
 -- ESP variables
@@ -409,7 +409,7 @@ categoryContents.Visuals = function(parent)
     skeletonCorner.CornerRadius = UDim.new(0, 6)
     skeletonCorner.Parent = skeletonBtn
 
-    -- Tracers ESP (заменили Box ESP)
+    -- Tracers ESP
     local tracersFrame = Instance.new("Frame")
     tracersFrame.Size = UDim2.new(1, 0, 0, 35)
     tracersFrame.Position = UDim2.new(0, 0, 0, 80)
@@ -784,8 +784,35 @@ end
 
 -- Improved CFrame Speed functionality
 local cfSpeedConnection
-local lastInputTime = 0
-local inputThreshold = 0.1 -- 100ms threshold
+local isMoving = false
+local moveKeys = {
+    [Enum.KeyCode.W] = false,
+    [Enum.KeyCode.A] = false,
+    [Enum.KeyCode.S] = false,
+    [Enum.KeyCode.D] = false
+}
+
+-- Track key presses
+UserInputService.InputBegan:Connect(function(input)
+    if moveKeys[input.KeyCode] ~= nil then
+        moveKeys[input.KeyCode] = true
+        isMoving = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if moveKeys[input.KeyCode] ~= nil then
+        moveKeys[input.KeyCode] = false
+        -- Check if any movement keys are still pressed
+        isMoving = false
+        for _, pressed in pairs(moveKeys) do
+            if pressed then
+                isMoving = true
+                break
+            end
+        end
+    end
+end)
 
 local function updateCFrameSpeed()
     if cfSpeedConnection then
@@ -795,31 +822,33 @@ local function updateCFrameSpeed()
     
     if udhl_settings.CFrameSpeed then
         cfSpeedConnection = RunService.Heartbeat:Connect(function()
-            -- Only move if there was recent input
-            if tick() - lastInputTime < inputThreshold then
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local root = player.Character.HumanoidRootPart
-                    root.CFrame = root.CFrame + root.CFrame.LookVector * (udhl_settings.SpeedValue / 100)
+            if isMoving and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local root = player.Character.HumanoidRootPart
+                local moveDirection = Vector3.new(0, 0, 0)
+                
+                -- Calculate movement direction based on pressed keys
+                if moveKeys[Enum.KeyCode.W] then
+                    moveDirection = moveDirection + root.CFrame.LookVector
+                end
+                if moveKeys[Enum.KeyCode.S] then
+                    moveDirection = moveDirection - root.CFrame.LookVector
+                end
+                if moveKeys[Enum.KeyCode.A] then
+                    moveDirection = moveDirection - root.CFrame.RightVector
+                end
+                if moveKeys[Enum.KeyCode.D] then
+                    moveDirection = moveDirection + root.CFrame.RightVector
+                end
+                
+                -- Normalize and apply speed
+                if moveDirection.Magnitude > 0 then
+                    moveDirection = moveDirection.Unit
+                    root.CFrame = root.CFrame + moveDirection * (udhl_settings.SpeedValue / 50)
                 end
             end
         end)
     end
 end
-
--- Track player input for CFrame Speed
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.A or 
-       input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.D or
-       input.UserInputType == Enum.UserInputType.Gamepad1 then
-        lastInputTime = tick()
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Gamepad1 then
-        lastInputTime = tick()
-    end
-end)
 
 -- Monitor CFrame Speed changes
 spawn(function()
