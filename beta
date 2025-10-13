@@ -17,15 +17,19 @@ local udhl_settings = {
     -- Movement
     CFrameSpeed = false,
     SpeedValue = 50,
+    Noclip = false,
     
     -- Visuals
     TracersESP = false,
-    Box2DESP = false
+    Box2DESP = false,
+    NametagsESP = false
 }
 
 -- ESP variables
 local tracers = {}
 local boxes2d = {}
+local nametags = {}
+local noclipConnection
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -49,7 +53,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 title.BorderSizePixel = 0
-title.Text = "UDHL 1.1.3"
+title.Text = "UDHL 1.1.4"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 18
 title.Font = Enum.Font.GothamBold
@@ -322,13 +326,13 @@ categoryContents.Movement = function(parent)
 
     -- CFrame Speed toggle
     local speedToggleFrame = Instance.new("Frame")
-    speedToggleFrame.Size = UDim2.new(1, 0, 0, 40)
+    speedToggleFrame.Size = UDim2.new(1, 0, 0, 35)
     speedToggleFrame.Position = UDim2.new(0, 0, 0, 40)
     speedToggleFrame.BackgroundTransparency = 1
     speedToggleFrame.Parent = movementFrame
 
     local speedBtn = Instance.new("TextButton")
-    speedBtn.Size = UDim2.new(1, 0, 0, 35)
+    speedBtn.Size = UDim2.new(1, 0, 1, 0)
     speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
     speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
     speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -339,6 +343,26 @@ categoryContents.Movement = function(parent)
     local speedBtnCorner = Instance.new("UICorner")
     speedBtnCorner.CornerRadius = UDim.new(0, 6)
     speedBtnCorner.Parent = speedBtn
+
+    -- Noclip toggle
+    local noclipFrame = Instance.new("Frame")
+    noclipFrame.Size = UDim2.new(1, 0, 0, 35)
+    noclipFrame.Position = UDim2.new(0, 0, 0, 80)
+    noclipFrame.BackgroundTransparency = 1
+    noclipFrame.Parent = movementFrame
+
+    local noclipBtn = Instance.new("TextButton")
+    noclipBtn.Size = UDim2.new(1, 0, 1, 0)
+    noclipBtn.BackgroundColor3 = udhl_settings.Noclip and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    noclipBtn.Text = udhl_settings.Noclip and "NOCLIP: ON" or "NOCLIP: OFF"
+    noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noclipBtn.TextSize = 14
+    noclipBtn.Font = Enum.Font.GothamBold
+    noclipBtn.Parent = noclipFrame
+
+    local noclipCorner = Instance.new("UICorner")
+    noclipCorner.CornerRadius = UDim.new(0, 6)
+    noclipCorner.Parent = noclipBtn
 
     -- Connections
     speedBox.FocusLost:Connect(function()
@@ -356,6 +380,13 @@ categoryContents.Movement = function(parent)
         speedBtn.BackgroundColor3 = udhl_settings.CFrameSpeed and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         speedBtn.Text = udhl_settings.CFrameSpeed and "CFRAME SPEED: ON" or "CFRAME SPEED: OFF"
     end)
+
+    noclipBtn.MouseButton1Click:Connect(function()
+        udhl_settings.Noclip = not udhl_settings.Noclip
+        noclipBtn.BackgroundColor3 = udhl_settings.Noclip and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        noclipBtn.Text = udhl_settings.Noclip and "NOCLIP: ON" or "NOCLIP: OFF"
+        updateNoclip()
+    end)
     
     return movementFrame
 end
@@ -369,7 +400,7 @@ categoryContents.Visuals = function(parent)
     
     -- Tracers ESP
     local tracersFrame = Instance.new("Frame")
-    tracersFrame.Size = UDim2.new(1, 0, 0, 35)
+    tracersFrame.Size = UDim2.new(1, 0, 0, 30)
     tracersFrame.BackgroundTransparency = 1
     tracersFrame.Parent = visualsFrame
 
@@ -388,8 +419,8 @@ categoryContents.Visuals = function(parent)
 
     -- 2D Box ESP
     local box2dFrame = Instance.new("Frame")
-    box2dFrame.Size = UDim2.new(1, 0, 0, 35)
-    box2dFrame.Position = UDim2.new(0, 0, 0, 40)
+    box2dFrame.Size = UDim2.new(1, 0, 0, 30)
+    box2dFrame.Position = UDim2.new(0, 0, 0, 35)
     box2dFrame.BackgroundTransparency = 1
     box2dFrame.Parent = visualsFrame
 
@@ -406,6 +437,26 @@ categoryContents.Visuals = function(parent)
     box2dCorner.CornerRadius = UDim.new(0, 6)
     box2dCorner.Parent = box2dBtn
 
+    -- Nametags ESP
+    local nametagsFrame = Instance.new("Frame")
+    nametagsFrame.Size = UDim2.new(1, 0, 0, 30)
+    nametagsFrame.Position = UDim2.new(0, 0, 0, 70)
+    nametagsFrame.BackgroundTransparency = 1
+    nametagsFrame.Parent = visualsFrame
+
+    local nametagsBtn = Instance.new("TextButton")
+    nametagsBtn.Size = UDim2.new(1, 0, 1, 0)
+    nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
+    nametagsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nametagsBtn.TextSize = 14
+    nametagsBtn.Font = Enum.Font.GothamBold
+    nametagsBtn.Parent = nametagsFrame
+
+    local nametagsCorner = Instance.new("UICorner")
+    nametagsCorner.CornerRadius = UDim.new(0, 6)
+    nametagsCorner.Parent = nametagsBtn
+
     -- Connections
     tracersBtn.MouseButton1Click:Connect(function()
         udhl_settings.TracersESP = not udhl_settings.TracersESP
@@ -418,6 +469,13 @@ categoryContents.Visuals = function(parent)
         udhl_settings.Box2DESP = not udhl_settings.Box2DESP
         box2dBtn.BackgroundColor3 = udhl_settings.Box2DESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         box2dBtn.Text = udhl_settings.Box2DESP and "2D BOX ESP: ON" or "2D BOX ESP: OFF"
+        updateESP()
+    end)
+
+    nametagsBtn.MouseButton1Click:Connect(function()
+        udhl_settings.NametagsESP = not udhl_settings.NametagsESP
+        nametagsBtn.BackgroundColor3 = udhl_settings.NametagsESP and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        nametagsBtn.Text = udhl_settings.NametagsESP and "NAMETAGS ESP: ON" or "NAMETAGS ESP: OFF"
         updateESP()
     end)
     
@@ -455,7 +513,7 @@ categoryContents.Info = function(parent)
     infoText.Size = UDim2.new(1, 0, 0, 120)
     infoText.Position = UDim2.new(0, 0, 0, 50)
     infoText.BackgroundTransparency = 1
-    infoText.Text = "UDHL Version 1.1.3\n\nEnhanced gameplay experience\n\nJoin our Discord for updates and support!"
+    infoText.Text = "UDHL Version 1.1.4\n\nEnhanced gameplay experience\n\nJoin our Discord for updates and support!"
     infoText.TextColor3 = Color3.fromRGB(255, 255, 255)
     infoText.TextSize = 14
     infoText.Font = Enum.Font.Gotham
@@ -545,7 +603,9 @@ function createBox2D(player)
         top = Drawing.new("Line"),
         bottom = Drawing.new("Line"),
         left = Drawing.new("Line"),
-        right = Drawing.new("Line")
+        right = Drawing.new("Line"),
+        healthBar = Drawing.new("Line"),
+        healthBarBackground = Drawing.new("Line")
     }
     
     for _, line in pairs(box) do
@@ -555,7 +615,27 @@ function createBox2D(player)
         line.ZIndex = 1
     end
     
+    -- Set specific colors for health bar
+    box.healthBar.Color = Color3.fromRGB(0, 255, 0)
+    box.healthBarBackground.Color = Color3.fromRGB(255, 0, 0)
+    
     boxes2d[player] = box
+end
+
+function createNametag(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local nametag = Drawing.new("Text")
+    nametag.Visible = false
+    nametag.Color = Color3.fromRGB(255, 255, 255)
+    nametag.Size = 13
+    nametag.Center = true
+    nametag.Outline = true
+    nametag.OutlineColor = Color3.fromRGB(0, 0, 0)
+    nametag.Font = 2
+    nametag.Text = player.Name
+    
+    nametags[player] = nametag
 end
 
 function updateESP()
@@ -576,6 +656,13 @@ function updateESP()
     end
     boxes2d = {}
     
+    for player, nametag in pairs(nametags) do
+        if nametag then
+            nametag:Remove()
+        end
+    end
+    nametags = {}
+    
     -- Create new ESP based on settings
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= Players.LocalPlayer then
@@ -584,6 +671,9 @@ function updateESP()
             end
             if udhl_settings.Box2DESP then
                 createBox2D(player)
+            end
+            if udhl_settings.NametagsESP then
+                createNametag(player)
             end
         end
     end
@@ -611,8 +701,9 @@ RunService.RenderStepped:Connect(function()
     end
     
     for player, box in pairs(boxes2d) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
             local rootPart = player.Character.HumanoidRootPart
+            local humanoid = player.Character.Humanoid
             local screenPoint, onScreen = camera:WorldToViewportPoint(rootPart.Position)
             
             if onScreen then
@@ -620,14 +711,16 @@ RunService.RenderStepped:Connect(function()
                 local headPoint = head and camera:WorldToViewportPoint(head.Position)
                 
                 if headPoint then
-                    local height = math.abs(screenPoint.Y - headPoint.Y)
-                    local width = height / 2
+                    -- Calculate box dimensions based on character size
+                    local height = math.abs(screenPoint.Y - headPoint.Y) * 2
+                    local width = height / 1.8
                     
-                    local topLeft = Vector2.new(screenPoint.X - width/2, headPoint.Y)
-                    local topRight = Vector2.new(screenPoint.X + width/2, headPoint.Y)
-                    local bottomLeft = Vector2.new(screenPoint.X - width/2, screenPoint.Y)
-                    local bottomRight = Vector2.new(screenPoint.X + width/2, screenPoint.Y)
+                    local topLeft = Vector2.new(screenPoint.X - width/2, headPoint.Y - height/4)
+                    local topRight = Vector2.new(screenPoint.X + width/2, headPoint.Y - height/4)
+                    local bottomLeft = Vector2.new(screenPoint.X - width/2, screenPoint.Y + height/4)
+                    local bottomRight = Vector2.new(screenPoint.X + width/2, screenPoint.Y + height/4)
                     
+                    -- Draw main box
                     box.top.From = topLeft
                     box.top.To = topRight
                     box.top.Visible = true
@@ -643,6 +736,25 @@ RunService.RenderStepped:Connect(function()
                     box.right.From = topRight
                     box.right.To = bottomRight
                     box.right.Visible = true
+                    
+                    -- Draw health bar
+                    local healthPercent = humanoid.Health / humanoid.MaxHealth
+                    local healthBarHeight = height
+                    local healthBarWidth = 3
+                    local healthBarX = topLeft.X - 6
+                    
+                    -- Health bar background (red)
+                    box.healthBarBackground.From = Vector2.new(healthBarX, topLeft.Y)
+                    box.healthBarBackground.To = Vector2.new(healthBarX, topLeft.Y + healthBarHeight)
+                    box.healthBarBackground.Visible = true
+                    box.healthBarBackground.Thickness = healthBarWidth
+                    
+                    -- Health bar (green)
+                    local healthHeight = healthBarHeight * healthPercent
+                    box.healthBar.From = Vector2.new(healthBarX, topLeft.Y + (healthBarHeight - healthHeight))
+                    box.healthBar.To = Vector2.new(healthBarX, topLeft.Y + healthBarHeight)
+                    box.healthBar.Visible = true
+                    box.healthBar.Thickness = healthBarWidth
                 end
             else
                 for _, line in pairs(box) do
@@ -655,22 +767,54 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    
+    for player, nametag in pairs(nametags) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+            local rootPart = player.Character.HumanoidRootPart
+            local humanoid = player.Character.Humanoid
+            local screenPoint, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+            
+            if onScreen then
+                local head = player.Character:FindFirstChild("Head")
+                local headPoint = head and camera:WorldToViewportPoint(head.Position)
+                
+                if headPoint then
+                    -- Position nametag above head
+                    nametag.Position = Vector2.new(headPoint.X, headPoint.Y - 40)
+                    nametag.Text = player.Name .. " [" .. math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth) .. "]"
+                    nametag.Visible = true
+                end
+            else
+                nametag.Visible = false
+            end
+        else
+            nametag.Visible = false
+        end
+    end
 end)
+
+-- Noclip function
+function updateNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    
+    if udhl_settings.Noclip and player.Character then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end
 
 -- Improved CFrame Speed functionality based on the example
 local speedControlConnection
-
-local function SpeedControl()
-    while udhl_settings.CFrameSpeed do
-        RunService.RenderStepped:Wait()
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
-            local moveDirection = player.Character.Humanoid.MoveDirection
-            if moveDirection.Magnitude > 0 then
-                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + moveDirection * (udhl_settings.SpeedValue / 10)
-            end
-        end
-    end
-end
 
 -- Monitor CFrame Speed changes
 spawn(function()
